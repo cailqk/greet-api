@@ -9,5 +9,4 @@ export type InitialState = {
 export type InfoState = InitialState & {
   people: Person[];
   categories: Category[];
-  scroll: boolean;
 };

@@ -8,7 +8,6 @@ const initialState: InfoState = {
   error: null,
   people: [],
   categories: [],
-  scroll: false,
 };
 
 export const getAllData = createAsyncThunk<
@@ -41,17 +40,14 @@ const peopleSlice = createSlice({
           (el) => el.categories
         );
         const uniqueCategories = Array.from(
-          new Set(flattenedCategories.map((cat) => cat.id))
+          new Set(flattenedCategories.map((categoryData) => categoryData.id))
         ).map((id) => {
-          const category = flattenedCategories.find((cat) => cat.id === id);
+          const category = flattenedCategories.find(
+            (categoryInfo) => categoryInfo.id === id
+          );
           return { id: category!.id, name: category!.name };
         });
-        if (
-          action.meta.arg.criteria.append === false ||
-          action.meta.arg.criteria.category !== undefined ||
-          action.meta.arg.criteria.order !== undefined ||
-          action.meta.arg.criteria.orderby !== undefined
-        ) {
+        if (action.meta.arg.criteria.append === false) {
           state.people = action.payload;
         } else {
           state.people = [...state.people, ...action.payload];
@@ -59,16 +55,14 @@ const peopleSlice = createSlice({
 
         state.categories = uniqueCategories as [];
         state.isLoading = false;
+      })
+      .addCase(getAllData.rejected, (state) => {
+        state.isLoading = false;
       });
   },
   initialState,
   name: "people",
-  reducers: {
-    stateReset: (state) => {
-      state.people = [];
-    },
-  },
+  reducers: {},
 });
 const peopleReducer = peopleSlice.reducer;
-export const { stateReset } = peopleSlice.actions;
 export default peopleReducer;

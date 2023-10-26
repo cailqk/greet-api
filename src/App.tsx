@@ -17,24 +17,24 @@ import {
   Select,
   Typography,
 } from "@mui/material";
-import { Controller } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { CircularProgress } from "@mui/material";
 import { FilterCriteria } from "./utils/interfaces";
 import ArrowUpwardIcon from "@mui/icons-material/ArrowUpward";
 import ArrowDownwardIcon from "@mui/icons-material/ArrowDownward";
-import "./App.css";
 import { ButtonElement } from "./components/Button";
-import { useForm } from "react-hook-form";
 import { btnColor, btnSize, btnVariant } from "./utils/enum";
+
+import "./App.css";
 
 function App() {
   const people = useAppSelector(selectPeople);
   const categories = useAppSelector(selectCategories);
   const isLoading = useAppSelector(selectIsLoading);
 
-  let p: number = 1;
-  const [filters, setFilters] = useState<FilterCriteria>({});
+  const [filters, setFilters] = useState<FilterCriteria>({ page: 1 });
   const [disabled, setDisabled] = useState<boolean>(true);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const { control, reset } = useForm({
     defaultValues: {
@@ -56,15 +56,19 @@ function App() {
     fetchData(criteria);
   }, [filters]);
 
-  const handleScroll = () => {
+  function handleScroll() {
     if (
       window.scrollY + window.innerHeight >=
       document.documentElement.scrollHeight
     ) {
-      p++;
-      setFilters({ append: true, page: p });
+      setScrollPosition(window.scrollY);
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        append: true,
+        page: prevFilters.page && prevFilters.page + 1,
+      }));
     }
-  };
+  }
 
   useEffect(() => {
     window.addEventListener("scroll", handleScroll);
@@ -73,29 +77,75 @@ function App() {
     };
   }, []);
 
+  useEffect(() => {
+    if (scrollPosition > 0) {
+      window.scrollTo(0, scrollPosition);
+    }
+  }, [people]);
+
   const ascByName = () => {
     setDisabled(false);
-    setFilters({ order: "asc", orderby: "slug", append: false });
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      page: 1,
+      order: "asc",
+      orderby: "slug",
+      append: false,
+    }));
+    setScrollPosition(0);
   };
 
   const descByName = () => {
     setDisabled(false);
-    setFilters({ order: "desc", orderby: "slug", append: false });
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      page: 1,
+      order: "desc",
+      orderby: "slug",
+      append: false,
+    }));
+    setScrollPosition(0);
   };
 
   const ascByPrice = () => {
     setDisabled(false);
-    setFilters({ order: "asc", orderby: "price", append: false });
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      page: 1,
+      order: "asc",
+      orderby: "price",
+      append: false,
+    }));
+    setScrollPosition(0);
   };
 
   const descByPrice = () => {
     setDisabled(false);
-    setFilters({ order: "desc", orderby: "price", append: false });
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      page: 1,
+      order: "desc",
+      orderby: "price",
+      append: false,
+    }));
+    setScrollPosition(0);
+  };
+
+  const filterByCategory = (category: number) => {
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      page: 1,
+      category: category,
+      append: false,
+    }));
+    setScrollPosition(0);
   };
 
   const resetFilters = () => {
     reset();
-    setFilters({ append: false });
+    setDisabled(true);
+    setScrollPosition(0);
+    setFilters({ append: false, page: 1 });
   };
 
   return (
@@ -123,19 +173,15 @@ function App() {
                     width: "16rem",
                   }}
                 >
-                  {categories &&
-                    categories.map((category) => (
-                      <MenuItem
-                        defaultValue={category.id}
-                        value={category.name}
-                        onClick={() => {
-                          setFilters({ category: category.id });
-                        }}
-                        key={category.id}
-                      >
-                        {category.name}
-                      </MenuItem>
-                    ))}
+                  {categories.map((category) => (
+                    <MenuItem
+                      onClick={() => filterByCategory(category.id)}
+                      value={category.id}
+                      key={category.id}
+                    >
+                      {category.name}
+                    </MenuItem>
+                  ))}
                 </Select>
               )}
             />
@@ -152,7 +198,10 @@ function App() {
                     width: "16rem",
                   }}
                   {...field}
-                  onChange={(event) => field.onChange(event.target.value)}
+                  onChange={(event) => {
+                    setDisabled(false);
+                    field.onChange(event.target.value);
+                  }}
                 >
                   <MenuItem value="name asc" onClick={ascByName}>
                     Name <ArrowUpwardIcon />
@@ -186,8 +235,13 @@ function App() {
             container
             spacing={2}
             direction="row"
-            justifyContent="flex-start"
+            justifyContent="center"
             alignItems="flex-start"
+            sx={{
+              "@media (min-width: 768px)": {
+                justifyContent: "flex-start",
+              },
+            }}
           >
             <Cards people={people} />
           </Grid>
@@ -202,7 +256,12 @@ function App() {
           justifyContent: "center",
         }}
       >
-        <CircularProgress />
+        <>
+          <p style={{ color: "white", fontSize: 25, marginRight: 10 }}>
+            Loading...
+          </p>
+          <CircularProgress />
+        </>
       </Modal>
     </Container>
   );

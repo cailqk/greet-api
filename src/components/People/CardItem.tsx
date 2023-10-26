@@ -68,7 +68,7 @@ export default function CardItem({ person }: Prop) {
           action={btnAction}
           size={btnSize.MEDIUM}
           variant={btnVariant.CONTAINED}
-          
+          disabled={false}
         />
       </CardActions>
     </Card>
